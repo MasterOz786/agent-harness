@@ -1,0 +1,22 @@
+---
+description: Conventions for code under agents/—tools, prompts, skills
+globs: agents/**/*
+alwaysApply: false
+---
+
+# `agents/` conventions
+
+## Tools
+
+- Keep tools **narrow and composable**; return structured dicts/JSON-friendly results for the LLM.
+- Enforce **workspace boundaries** and safe execution (e.g. git-only shell, path traversal checks)—assume hostile or mistaken model arguments.
+- Expose **JSON schemas** for harness/LLM registration; keep names stable.
+
+## Prompts and skills
+
+- Prefer **markdown** system templates or `AGENTS.md` for ReAct-style agents; use placeholders for memory, date, workspace.
+- **Skills**: short frontmatter (`name`, `description`) + body; progressive disclosure—descriptions in context, full body loaded when relevant.
+
+## What not to put here
+
+- No raw API keys; no FastAPI routes; no DB connection pools—those belong in **`harness/`** or a future **`api/`** / **`core/`** layer.

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-harness"
+version = "0.1.0"
+description = "Agent harness with revisions tools and OpenRouter editor"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.40.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+revisions-agent = "revisions.agent:main"
+
+[tool.setuptools.packages.find]
+where = ["agents"]

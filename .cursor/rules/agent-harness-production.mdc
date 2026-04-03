@@ -1,0 +1,47 @@
+---
+description: Production harness concerns—safety, persistence, context, observability, ops
+alwaysApply: true
+---
+
+# Production-ready harness (plumbing)
+
+A demo agent loop is not production. When implementing or reviewing harness work, **explicitly consider** the following; do not assume tutorials cover them.
+
+## Safety and trust
+
+- **Input guardrails** before the LLM: content policy, prompt-injection heuristics, optional PII block on ingress.
+- **Output guardrails** before the user: PII redact/mask/block; optional lightweight model safety pass; define fail-open vs fail-closed.
+- **Tool abuse**: validate arguments, workspace boundaries, rate limits; dangerous tools behind flags or roles.
+
+## Sessions and memory
+
+- **Conversation state**: thread/session id; persist across restarts (checkpoints or store) if the product requires resume.
+- **Long-term memory** (if needed): retrieve relevant context before the call; update asynchronously after response to avoid blocking.
+
+## Context and reliability
+
+- **Large tool outputs**: truncate, spill to disk with preview + follow-up read, or summarize—never unbounded tool JSON in history.
+- **Context window**: monitor token/char budget; summarize or trim old turns; preserve tool-call/tool-result pairing when editing history.
+- **Retries**: exponential backoff on provider timeouts; bounded tool rounds; clear errors to the caller.
+
+## API and product surface
+
+- **HTTP API** (e.g. FastAPI): versioned routes, request validation, HTML/script stripping on text fields.
+- **Auth**: session- or user-scoped tokens; inject identity into logging and tracing.
+- **Rate limiting**: per endpoint and environment (stricter in production).
+
+## Observability and quality
+
+- **Tracing**: LLM + tool spans (e.g. Langfuse-style), correlation ids, replayable request chains.
+- **Metrics**: latency histograms, token counters, tool success/failure counts; `/metrics` if you run Prometheus.
+- **Logging**: structured logs (event name + fields), request context (session/user) from middleware.
+- **Streaming**: SSE or equivalent if UX requires token streaming; measure stream duration.
+- **Evals**: LLM-as-judge or fixed tests on traces; catch regressions before users.
+
+## Integration and deployment
+
+- **MCP** (optional): load external tools at startup; reconnect + degrade gracefully if servers fail.
+- **Config**: layered env (`.env`, `.env.local`, env-specific); secrets never committed.
+- **Containers**: non-root user, minimal image, health checks; compose for DB, metrics stack when you add them.
+
+When the user asks only for “the agent brain,” still **call out** which plumbing items are missing so they can prioritize.

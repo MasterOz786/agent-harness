@@ -1,0 +1,33 @@
+---
+description: Harness vs agent separation, layout, and agent architecture patterns
+alwaysApply: true
+---
+
+# Agent harness architecture
+
+## Core principle
+
+The **harness** is infrastructure (LLM transport, tool execution, auth, persistence, safety, observability). The **agent** is the specialist (prompts, tool definitions, domain behavior). Do not mix harness concerns into `agents/*` tool modules; inject them from `harness/` or a future `api/` / `core/` layer.
+
+## This repo (adapt the article’s `src/app/` idea)
+
+- **`agents/<slug>/`** — Self-contained: tools (`tools.py`), optional LLM entry (`agent.py`), package `__init__.py`. Keep the **slug/name stable** once others depend on it (see `agents/AGENT_INSTRUCTIONS.md`).
+- **`harness/`** — Shared shell: OpenRouter loop, schema conversion, future guardrails, metrics, checkpoints.
+- Prefer **`python -m harness.revisions_editor`** or editable install (`pip install -e .`) so imports resolve without ad-hoc `PYTHONPATH`.
+
+## Agent architecture patterns (pick one per use case)
+
+| Pattern | Control | Best for |
+|--------|---------|----------|
+| **Explicit graph** (e.g. LangGraph nodes: input guardrail → chat → tools → output guardrail) | Full | Chat, strict routing, auditability |
+| **Multi-agent / subgraphs** (supervisor delegates parallel workers) | Hierarchical | Research, decomposable tasks |
+| **ReAct + skills** (markdown skills, `AGENTS.md`, progressive disclosure) | Agent-led | Domain tools (SQL, APIs), behavior change without rewiring graphs |
+
+All patterns should still share the **same** harness cross-cutting concerns when you add them (auth, tracing, limits), not reimplement them inside each agent directory.
+
+## New agent checklist
+
+1. New directory under `agents/<slug>/` with clear role and boundaries.
+2. Tools: small, testable surface; document JSON schemas for the LLM.
+3. System prompts: templates with placeholders (memory, date, workspace path) when you add them.
+4. Entry: thin wrapper that calls the harness; **no** secrets or provider keys in agent code—env/config only.
